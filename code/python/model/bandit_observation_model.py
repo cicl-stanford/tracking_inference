@@ -1303,7 +1303,7 @@ def visualize_trial(df_trial, trial_num, viz_type="pdf", frame_rate=3, kde_metho
 def run_bandit_all_trials(num_runs=30, decision_threshold=0.6, tradeoff_param=0.003, sample_weight=200, bw=20, max_iter=100, empirical_priors=True, kde_method="FFT", noise_params=(15.0, 15.0, 0.2, 0.8, 0.2), start=0, end=150):
 
 	time_start = time.time()
-	world_num_list = os.listdir("data/selection/ground_truth/")
+	world_num_list = os.listdir("../../../data/stimuli/ground_truth/")
 	world_num_list = sorted([int(x[6:-5]) for x in world_num_list])
 
 	world_num_list = world_num_list[start:end]
@@ -1415,7 +1415,7 @@ def run_bandit_no_perception_all_trials(num_runs=30, decision_threshold=0.6, sam
 def run_fixed_sample_all_trials(num_samples=100, bw=20, noise_params=(15.0,15.0,0.2,0.8,0.2), start=0, end=150):
 
 	time_start = time.time()
-	world_num_list = os.listdir("data/selection/ground_truth/")
+	world_num_list = os.listdir("../../../data/stimuli/ground_truth/")
 	world_num_list = sorted([int(x[6:-5]) for x in world_num_list])
 
 	world_num_list = world_num_list[start:end]
