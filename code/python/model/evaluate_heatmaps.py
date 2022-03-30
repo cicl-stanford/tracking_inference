@@ -136,7 +136,7 @@ def baseline_compare(human_data, grid_step, testing=False):
 		print("Trial:", trial_num)
 
 		human_looks = human_data[human_data["trial"] == trial_num][['x', 'y']].to_numpy()
-		human_hist = make_kde(human_looks, grid_step, row_num, col_num)
+		human_hist = make_kde(human_looks, grid_step)
 
 		human_hist = human_hist/np.sum(human_hist)
 
