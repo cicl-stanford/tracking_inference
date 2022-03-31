@@ -35,7 +35,7 @@ options(dplyr.summarise.inform = F)
 ```{r}
 use_condaenv("plinko")
 pd = import("pandas")
-df_data = pd$read_pickle("../../data/full_dataset_vision_corrected.xz")
+df_data = pd$read_pickle("../../data/human_data/full_dataset_vision_corrected.xz")
 ```
 
 
@@ -430,7 +430,7 @@ df_bandit_performance %>%
 ```
 
 ```{r}
-df_model_judge_rt = read.csv("../python/model/model_performance/grid_judgment_rt/bandit_runs_30_threshold_1.0_tradeoff_0.1_sample_weight_500_bw_40.0_look_probs_0.5_0.8_0.02_0.5_noise_params_0.0_10.0_0.2_0.8_0.2_heuristic_prior_trial_0_150.csv") %>% select(-X)
+df_model_judge_rt = read.csv("../python/model/model_performance/judgment_rt/bandit_runs_30_threshold_1.0_tradeoff_0.1_sample_weight_500_bw_40.0_look_probs_0.5_0.8_0.02_0.5_noise_params_0.0_10.0_0.2_0.8_0.2_heuristic_prior_trial_0_150.csv") %>% select(-X)
 ```
 
 ### Judgments
@@ -501,7 +501,7 @@ ggplot(data = df_to_show, mapping = aes(x = model_mean,
 
 
 
-ggsave("figures/bandit_judgment.pdf", height = 4, width = 5)
+# ggsave("figures/bandit_judgment.pdf", height = 4, width = 5)
   
 ```
 
@@ -555,7 +555,7 @@ ggplot(data = df_to_show, mapping = aes(x = mean_time, y = mean_rt)) +
         axis.title = element_text(size=14),
         axis.text = element_text(size=12))
 
-ggsave("figures/bandit_rt.png", height = 4, width = 5)
+# ggsave("figures/bandit_rt.png", height = 4, width = 5)
 
 ```
 
@@ -608,7 +608,7 @@ ggplot(data = df_to_show, mapping = aes(x = mean_log_time, y = mean_log_rt)) +
         axis.text = element_text(size=18),
         plot.margin = margin(10, 0, 0, 10))
 
-ggsave("figures/bandit_log_rt.pdf", height = 4, width = 5)
+# ggsave("figures/bandit_log_rt.pdf", height = 4, width = 5)
 ```
 
 ```{r}
@@ -640,7 +640,7 @@ df_fixed_performance %>%
 
 
 ```{r}
-df_fixed_sample_judge_rt = read.csv("../python/model/model_performance/grid_judgment_rt/fixed_sample_num_samples_80_bw_12.0_look_probs_0.5_0.8_0.02_0.5_noise_params_0.0_10.0_0.2_0.8_0.2_trial_0_150.csv") %>%  select(-X)
+df_fixed_sample_judge_rt = read.csv("../python/model/model_performance/judgment_rt/fixed_sample_num_samples_80_bw_12.0_look_probs_0.5_0.8_0.02_0.5_noise_params_0.0_10.0_0.2_0.8_0.2_trial_0_150.csv") %>%  select(-X)
 ```
 
 
@@ -690,7 +690,7 @@ ggplot(df_to_show, mapping = aes(x = prediction, y = human_mean)) +
         axis.title = element_text(size=16),
         axis.text = element_text(size=10))
 
-ggsave("figures/fixed_sample_judgments.pdf", height=4, width=5)
+# ggsave("figures/fixed_sample_judgments.pdf", height=4, width=5)
 ```
 
 ```{r}
@@ -741,7 +741,7 @@ ggplot(data = df_to_show, mapping = aes(x = log_time, y = mean_log_rt)) +
         axis.text = element_text(size=18),
         plot.margin = margin(10,0,0,10))
 
-ggsave("figures/fixed_sample_rt.pdf", height=4, width = 5)
+# ggsave("figures/fixed_sample_rt.pdf", height=4, width = 5)
 ```
 
 ```{r}
@@ -849,11 +849,11 @@ ggplot(df_to_show, mapping = aes(x = log_time,
 
 ## EMD
 ```{r}
-df_emd_bandit = read.csv("../python/model/model_performance/emd/top_bandit.csv") %>% 
+df_emd_bandit = read.csv("../python/model/model_performance/emd/bandit.csv") %>% 
   select(trial, distance) %>% 
   mutate(model = "Bandit")
 
-df_emd_fixed_sample = read.csv("../python/model/model_performance/emd/top_fixed_sample.csv") %>%
+df_emd_fixed_sample = read.csv("../python/model/model_performance/emd/fixed_sample.csv") %>%
   select(trial, distance) %>%
   mutate(trial = factor(trial),
          model = "Uniform Sampler")
@@ -899,9 +899,9 @@ ggplot(df_to_show, mapping = aes(x = model,
         axis.title.x = element_blank(),
         axis.text = element_text(size=20))
 
-ggsave("figures/emd_comparison.pdf",
-       height = 5,
-       width = 10)
+# ggsave("figures/emd_comparison.pdf",
+#        height = 5,
+#        width = 10)
 
 ```
 

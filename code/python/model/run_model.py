@@ -3,8 +3,7 @@ import pandas as pd
 import bandit_observation_model as b
 from sys import argv
 
-if "test" in argv[-1]:
-	testing = True
+testing = "test" in argv[-1]
 
 if testing:
 	end = 3

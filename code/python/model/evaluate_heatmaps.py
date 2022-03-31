@@ -9,7 +9,7 @@ import time
 
 def load_data(split="train"):
 
-	eye_data = pd.read_pickle("../../../data/full_dataset_vision_corrected.xz")
+	eye_data = pd.read_pickle("../../../data/human_data/full_dataset_vision_corrected.xz")
 
 	if split == "train":
 		eye_data = eye_data[(eye_data['experiment'] == "vision") & (eye_data['participant'] < 16)]
