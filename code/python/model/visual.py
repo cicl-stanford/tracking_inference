@@ -8,6 +8,10 @@ import numpy as np
 from numpy import array, cos, dot, pi, sin, argmin, absolute
 from pygame.color import THECOLORS
 from pygame.constants import QUIT, KEYDOWN, K_ESCAPE
+import copy
+from matplotlib import pyplot as plt
+from KDEpy import FFTKDE
+import PIL
 
 
 # import files 
@@ -170,112 +174,85 @@ def draw_ball(c, screen, frame):
 def draw_box_unity(c, screen, adjust=False):
 
 
-    original_center_x = c['screen_size']['width']/2
-    original_center_y = c['screen_size']['height']/2
 
-    new_center_x, new_center_y = convertCoordinate(original_center_x, original_center_y)
-
-    diff_x = original_center_x - new_center_x
-    diff_y = original_center_y - new_center_y
-
-    # Could modify this with the ground value
-    topwall_y_pymunk = c['med'] + c['height']/2
-    ground_y_pymunk = c['med'] - c['height']/2
-    x_left_wall_pymunk = c['med'] - c['width']/2
-    x_right_wall_pymunk = c['med'] + c['width']/2
+    # Set these manually
+    # Pymunk center is 350,350
+    # Width is 300 and height is 250
+    # Y values are subtracted from 700 when switching to pygame
+    pymunk_y_top = 100
+    pymunk_y_ground = 600
+    pymunk_x_left = 50
+    pymunk_x_right = 650
 
 
-    hole1_left_pymunk = c['hole_positions'][0] - c['hole_width']/2
-    hole1_right_pymunk = c['hole_positions'][0] + c['hole_width']/2
-    hole2_left_pymunk = c['hole_positions'][1] - c['hole_width']/2
-    hole2_right_pymunk = c['hole_positions'][1] + c['hole_width']/2
-    hole3_left_pymunk = c['hole_positions'][2] - c['hole_width']/2
-    hole3_right_pymunk = c['hole_positions'][2] + c['hole_width']/2
+    pymunk_hole1_left = c['old_hole_positions'][0] - c['hole_width']/2
+    pymunk_hole1_right = c['old_hole_positions'][0] + c['hole_width']/2
+    pymunk_hole2_left = c['old_hole_positions'][1] - c['hole_width']/2
+    pymunk_hole2_right = c['old_hole_positions'][1] + c['hole_width']/2
+    pymunk_hole3_left = c['old_hole_positions'][2] - c['hole_width']/2
+    pymunk_hole3_right = c['old_hole_positions'][2] + c['hole_width']/2
 
 
     # draw ground
-    x_left_unity, y_bottom_unity = convertCoordinate(x_left_wall_pymunk, ground_y_pymunk)
-    x_right_unity, _ = convertCoordinate(x_right_wall_pymunk, ground_y_pymunk)
-
-    x_left_unity += diff_x
-    x_right_unity += diff_x
-    y_bottom_unity += diff_y
-
-
-    y_bottom_unity = utils.flipy(c, y_bottom_unity)
+    unity_x_left, unity_y_ground = convertCoordinate(pymunk_x_left, pymunk_y_ground)
+    unity_x_right, _ = convertCoordinate(pymunk_x_right, pymunk_y_ground)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (x_left_unity, y_bottom_unity),
-        (x_right_unity, y_bottom_unity))
+        (unity_x_left, unity_y_ground),
+        (unity_x_right, unity_y_ground))
 
     # draw left wall
-    _, y_top_unity = convertCoordinate(x_left_wall_pymunk, topwall_y_pymunk)
-
-    y_top_unity += diff_y
-
-
-    y_top_unity = utils.flipy(c, y_top_unity)
+    _, unity_y_top = convertCoordinate(pymunk_x_left, pymunk_y_top)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (x_left_unity, y_bottom_unity),
-        (x_left_unity, y_top_unity))
+        (unity_x_left, unity_y_ground),
+        (unity_x_left, unity_y_top))
 
     # draw right wall
-    x_right_unity, _ = convertCoordinate(x_right_wall_pymunk, topwall_y_pymunk)
-
-    x_right_unity += diff_x
+    unity_x_right, _ = convertCoordinate(pymunk_x_right, pymunk_y_top)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (x_right_unity, y_bottom_unity),
-        (x_right_unity, y_top_unity))
+        (unity_x_right, unity_y_ground),
+        (unity_x_right, unity_y_top))
 
 
     # Top horizontal 1
-    hole1_left_unity, _ = convertCoordinate(hole1_left_pymunk, topwall_y_pymunk)
-
-    hole1_left_unity += diff_x
+    unity_hole1_left, _ = convertCoordinate(pymunk_hole1_left, pymunk_y_top)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (x_left_unity, y_top_unity),
-        (hole1_left_unity, y_top_unity))
+        (unity_x_left, unity_y_top),
+        (unity_hole1_left, unity_y_top))
 
     # Top horizontal 2
-    hole1_right_unity, _ = convertCoordinate(hole1_right_pymunk, topwall_y_pymunk)
-    hole2_left_unity, _ = convertCoordinate(hole2_left_pymunk, topwall_y_pymunk)
+    unity_hole1_right, _ = convertCoordinate(pymunk_hole1_right, pymunk_y_top)
+    unity_hole2_left, _ = convertCoordinate(pymunk_hole2_left, pymunk_y_top)
 
-    hole1_right_unity += diff_x
-    hole2_left_unity += diff_x
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (hole1_right_unity, y_top_unity),
-        (hole2_left_unity, y_top_unity))
+        (unity_hole1_right, unity_y_top),
+        (unity_hole2_left, unity_y_top))
 
     # Top horizontal 3
-    hole2_right_unity, _ = convertCoordinate(hole2_right_pymunk, topwall_y_pymunk)
-    hole3_left_unity, _ = convertCoordinate(hole3_left_pymunk, topwall_y_pymunk)
-
-    hole2_right_unity += diff_x
-    hole3_left_unity += diff_x
+    unity_hole2_right, _ = convertCoordinate(pymunk_hole2_right, pymunk_y_top)
+    unity_hole3_left, _ = convertCoordinate(pymunk_hole3_left, pymunk_y_top)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (hole2_right_unity, y_top_unity),
-        (hole3_left_unity, y_top_unity))
+        (unity_hole2_right, unity_y_top),
+        (unity_hole3_left, unity_y_top))
 
     # Top horizontal 4
-    hole3_right_unity, _ = convertCoordinate(hole3_right_pymunk, topwall_y_pymunk)
-
-    hole3_right_unity += diff_x
+    unity_hole3_right, _ = convertCoordinate(pymunk_hole3_right, pymunk_y_top)
 
     pygame.draw.line(screen,
         THECOLORS['black'],
-        (hole3_right_unity, y_top_unity),
-        (x_right_unity, y_top_unity))
+        (unity_hole3_right, unity_y_top),
+        (unity_x_right, unity_y_top))
 
 
 
@@ -290,30 +267,30 @@ def draw_obstacles_unity(c, screen, colors):
 
 def draw_walls(c, screen):
     # top horizontal: 1
-        topwall_y = utils.flipy(c,c['med'] + c['height']/2)
+        top_wall_y = utils.flipy(c,c['med'] + c['height']/2)
         
         pygame.draw.line(screen,
                     THECOLORS['black'],
-                    (c['med'] - c['width']/2, topwall_y),
-                    (c['hole_positions'][0] - c['hole_width']/2, topwall_y))
+                    (c['med'] - c['width']/2, top_wall_y),
+                    (c['hole_positions'][0] - c['hole_width']/2, top_wall_y))
         
         # top horizontal: 2
         pygame.draw.line(screen,
                     THECOLORS['black'],
-                    (c['hole_positions'][0] + c['hole_width']/2, topwall_y),
-                    (c['hole_positions'][1] - c['hole_width']/2, topwall_y))
+                    (c['hole_positions'][0] + c['hole_width']/2, top_wall_y),
+                    (c['hole_positions'][1] - c['hole_width']/2, top_wall_y))
         
         # top horizontal: 3
         pygame.draw.line(screen,
                     THECOLORS['black'],
-                    (c['hole_positions'][1] + c['hole_width']/2, topwall_y),
-                    (c['hole_positions'][2] - c['hole_width']/2, topwall_y))
+                    (c['hole_positions'][1] + c['hole_width']/2, top_wall_y),
+                    (c['hole_positions'][2] - c['hole_width']/2, top_wall_y))
         
         # top horizontal: 4
         pygame.draw.line(screen,
                     THECOLORS['black'],
-                    (c['hole_positions'][2] + c['hole_width']/2, topwall_y),
-                    (c['med'] + c['width']/2, topwall_y))
+                    (c['hole_positions'][2] + c['hole_width']/2, top_wall_y),
+                    (c['med'] + c['width']/2, top_wall_y))
 
         # left vertical
         pygame.draw.line(screen,
@@ -375,6 +352,408 @@ def draw_eye_data(c, screen, eye_data):
             3,
             width=0)
 
+
+########################
+# Trial Transformation #
+########################
+
+# Procedures to transform a trial from pymunk to unity coordinates
+def generate_trial_shapes(trial, generate_shapes=True):
+    
+    shape_trial = copy.deepcopy(trial)
+    
+    for ob, ob_dict in shape_trial['obstacles'].items():
+        
+        center_x = ob_dict['position']['x']
+        center_y = ob_dict['position']['y']
+        
+        if generate_shapes:
+            ob_shape = np.array(utils.generate_ngon(ob_dict['n_sides'], ob_dict['size']))
+
+        else:
+            ob_shape = np.array(ob_dict['shape'])
+
+        rot = ob_dict['rotation']
+        rotmat = np.array([[np.cos(rot), -np.sin(rot)],
+                            [np.sin(rot), np.cos(rot)]])
+        
+        rotated_shape = (rotmat@ob_shape.T).T
+        
+        rotated_shape = rotated_shape + np.array([center_x, center_y])[None,:]
+        
+        ob_dict['shape'] = rotated_shape.tolist()
+        
+    return shape_trial
+
+
+def transform_trial(aligned_shape_trial):
+    
+    transformed_trial = copy.deepcopy(aligned_shape_trial)
+    
+    bfp_x = transformed_trial['ball_final_position']['x']
+    bfp_y = transformed_trial['ball_final_position']['y']
+    
+    new_bfp_x, new_bfp_y = convertCoordinate(bfp_x, bfp_y)
+    
+    transformed_trial['ball_final_position'] = {'x': new_bfp_x, 'y': new_bfp_y}
+
+    ball_top_y = bfp_y + transformed_trial['ball_radius']
+    _, new_ball_top_y =  convertCoordinate(bfp_x, ball_top_y)
+
+    unity_radius = new_ball_top_y - new_bfp_y
+    assert unity_radius > 0
+    transformed_trial['ball_radius'] = unity_radius
+    
+    for ob, ob_dict in transformed_trial['obstacles'].items():
+        
+        center_x = ob_dict['position']['x']
+        center_y = ob_dict['position']['y']
+        
+        new_center_x, new_center_y = convertCoordinate(center_x, center_y)
+        
+        ob_dict['position']['x'] = new_center_x
+        ob_dict['position']['y'] = new_center_y
+        
+        ob_dict['shape'] = [list(convertCoordinate(x,y)) for x,y in ob_dict['shape']]
+        
+    
+    new_hole_positions = []
+    transformed_trial['old_hole_positions'] = transformed_trial['hole_positions']
+    
+    hole_y = 700
+    for hole_x in transformed_trial['hole_positions']:
+        new_hole_x, _ = convertCoordinate(hole_x, hole_y)
+        
+        new_hole_positions.append(new_hole_x)
+        
+    transformed_trial['hole_positions'] = new_hole_positions
+    transformed_trial['screen_size'] = {"width": 600, "height": 500}
+    
+    return transformed_trial
+
+
+def unity_transform_trial(trial, generate_shapes=True):
+    trial_shapes = generate_trial_shapes(trial, generate_shapes=generate_shapes)
+    transformed_trial = transform_trial(trial_shapes)
+    
+    return transformed_trial
+
+
+############################
+# Visualize Agent Behavior #
+############################
+
+def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=565, unity_background=False, kde_method="FFT"):
+    
+    color = ['red', 'blue', 'green']
+    
+    x, weights = zip(*density_samples[hole])
+    unity_x = [convertCoordinate(pt, 100)[0] for pt in x]
+    x = np.array(unity_x)
+    weights = np.array(weights)
+
+    # print(x)
+    
+    if unity_background:
+        x_grid = np.linspace(10,585,600)
+        # x = x - 50
+        offset = 480
+    else:
+        # x_grid = np.linspace(90, 610, 520)
+        x_grid = np.linspace(10,585,600)
+
+
+    if kde_method == "FFT":
+        kde = FFTKDE(kernel="gaussian", bw=20).fit(x, weights=weights)
+        p = kde.evaluate(x_grid)*-multiplier
+    elif kde_method == "scikit":
+        kde = KernelDensity(kernel="gaussian", bandwidth=20).fit(x[:,np.newaxis], sample_weight=weights)
+        p = np.exp(kde.score_samples(x_grid[:,np.newaxis]))*-multiplier
+    
+    p += offset
+    
+    
+
+    if unity_background:
+        p = np.insert(p, 0, offset)
+        p = np.append(p, offset)
+        x_grid = np.insert(x_grid,0,15)
+        x_grid = np.append(x_grid,585)
+    else:
+        p = np.insert(p, 0, offset)
+        p = np.append(p, offset)
+        x_grid = np.insert(x_grid, 0, 90)
+        x_grid = np.append(x_grid, 610)
+    
+    col = color[hole]
+    ax.fill(x_grid, p, color=col, alpha=0.5)
+    
+    return ax
+
+def visualize_frame(trial,
+                    action,
+                    frame_num, 
+                    shapes,
+                    ball_pos,
+                    eye_pos,
+                    density_samples,
+                    kde_method="FFT",
+                    save=False):
+    
+    frame_name = "frame" + str(frame_num).zfill(3)
+
+    for shape_name, shape in shapes:
+        trial['obstacles'][shape_name]['shape'] = shape
+
+    snapshot(trial, 
+            "visuals_agent/frames/", 
+            frame_name,
+            ball_pos=ball_pos,
+            unity_coordinates=True)
+
+    img = plt.imread("visuals_agent/frames/{}.png".format(frame_name))
+    fig, ax = plt.subplots()
+    ax.imshow(img)
+    ax.axis("off")
+
+    if action == "simulate":
+        label = "simulate"
+    elif action == "sim_look":
+        label = "look"
+    elif action == "initialize":
+        label = "initialize"
+
+    ax.text(350,
+            650,
+            label,
+            fontsize=16,
+            verticalalignment="center",
+            horizontalalignment="center")
+
+    graph_conditional_dist(ax, 0, density_samples, kde_method=kde_method)
+    graph_conditional_dist(ax, 1, density_samples, kde_method=kde_method)
+    graph_conditional_dist(ax, 2, density_samples, kde_method=kde_method)
+
+    draw_eye_plt(ax, eye_pos)
+
+    ax.text(220, 60,
+            "1",
+            color="red",
+            fontsize=10,
+            verticalalignment="center",
+            horizontalalignment="center")
+    ax.text(350, 60,
+            "2", 
+            color="blue",
+            fontsize=10,
+            verticalalignment="center",
+            horizontalalignment="center")
+    ax.text(480, 60,
+            "3",
+            color="green",
+            fontsize=10,
+            verticalalignment="center",
+            horizontalalignment="center")
+
+    if save:
+        plt.savefig("visuals_agent/frames/{}.png".format(frame_name), 
+                    dpi=200)
+        
+    return ax
+
+def draw_eye_plt(ax, eye_pos):
+
+    eye_x = eye_pos[0]
+    eye_y = 700 - eye_pos[1]
+
+    outline = plt.Circle((eye_x, eye_y), 11, color="black", zorder=3)
+    sclera = plt.Circle((eye_x, eye_y), 10, color="white", zorder=3)
+    iris = plt.Circle((eye_x, eye_y), 6, color="deepskyblue", zorder=3)
+    pupil = plt.Circle((eye_x, eye_y), 2, color="black", zorder=3)
+
+    ax.add_patch(outline)
+    ax.add_patch(sclera)
+    ax.add_patch(iris)
+    ax.add_patch(pupil)
+
+    return ax
+
+def visualize_simulation(ax, trial, sim_data, frame_num, eye_pos=None):
+    
+    color = ["red", "blue", "green"]
+    frame_name = "frame" + str(frame_num).zfill(3)
+    hole, outcome, trajectory = sim_data
+    
+    x = []
+    y = []
+    for pt in trajectory:
+        x.append(pt['x'])
+        y.append(700 - pt['y'])
+    
+    start_pt = trajectory[0]
+    start_x = start_pt['x']
+    start_y = 700 - start_pt['y']
+    
+    col = color[hole]
+    ax.plot(x, y, "--", color=col)
+    circle1 = plt.Circle((start_x, start_y), 20, color=col)
+    circle2 = plt.Circle((outcome['x'],700-outcome['y']), 20, color=col)
+    
+    ax.add_patch(circle1)
+    ax.add_patch(circle2)
+
+    if not (eye_pos is None):
+        ax = draw_eye_plt(ax, eye_pos)
+    
+    plt.savefig("visuals_agent/frames/{}.png".format(frame_name), 
+                dpi=200)
+    
+    return ax
+    
+
+def visualize_trial(df_trial, trial_num, trial, viz_type="pdf", frame_rate=3, kde_method="FFT"):
+    
+    num_rows = df_trial.shape[0]
+    
+    trial = unity_transform_trial(trial)
+    ball_pos = trial['ball_final_position']
+    
+    frame_num = 0
+    for i in range(num_rows):
+        
+        eye_pos = df_trial['eye_pos'][i]
+        ball_pos = df_trial['ball_positions'][i]
+        action = df_trial['action'][i]
+        
+        if action == "initialize":
+            shapes = df_trial['shapes'][i]
+            density_samples = df_trial['density_samples'][i]
+            ax = visualize_frame(trial,
+                                 action,
+                                 frame_num,
+                                 shapes,
+                                 ball_pos,
+                                 eye_pos,
+                                 density_samples,
+                                 kde_method=kde_method,
+                                 save=True)
+            
+        elif action == "simulate":
+            
+            shapes = df_trial['shapes'][i]
+            sim_data = df_trial['sim_data'][i]
+        
+            density_samples_before = df_trial['density_samples'][i-1]
+
+            eye_pos = df_trial['eye_pos'][i]
+        
+            ax = visualize_frame(trial, 
+                                 action,
+                                 frame_num, 
+                                 shapes, 
+                                 ball_pos,
+                                 eye_pos, 
+                                 density_samples_before,
+                                 kde_method=kde_method)
+
+            ax = visualize_simulation(ax, trial, sim_data, frame_num, eye_pos)
+            
+            frame_num += 1
+            
+            density_samples_after = df_trial['density_samples'][i]
+            
+            ax = visualize_frame(trial,
+                                 action,
+                                 frame_num,
+                                 shapes,
+                                 ball_pos,
+                                 eye_pos, 
+                                 density_samples_after,
+                                 kde_method=kde_method)
+            
+            ax = visualize_simulation(ax, trial, sim_data, frame_num, eye_pos)
+
+        elif action == "sim_look":
+
+            shapes = df_trial['shapes'][i]
+            sim_data = df_trial['sim_data'][i]
+
+            density_samples = df_trial['density_samples'][i]
+
+            eye_pos = df_trial['eye_pos'][i]
+
+            ax = visualize_frame(trial,
+                                 action,
+                                 frame_num,
+                                 shapes,
+                                 ball_pos,
+                                 eye_pos,
+                                 density_samples,
+                                 kde_method=kde_method)
+
+            ax = visualize_simulation(ax, trial, sim_data, frame_num, eye_pos)
+            
+        elif action == "top_look":
+            
+            shapes_before = df_trial['shapes'][i-1]
+            shapes_after = df_trial['shapes'][i]
+            density_samples = df_trial['density_samples'][i]
+            
+            ax = visualize_frame(trial,
+                                 action,
+                                 frame_num,
+                                 shapes_before,
+                                 ball_pos,
+                                 eye_pos,
+                                 density_samples,
+                                 kde_method=kde_method,
+                                 save=True)
+            
+            frame_num += 1
+            
+            ax = visualize_frame(trial,
+                                 action,
+                                 frame_num,
+                                 shapes_after,
+                                 ball_pos,
+                                 eye_pos,
+                                 density_samples,
+                                 kde_method=kde_method,
+                                 save=True)
+        
+        
+        frame_num += 1
+        
+        plt.close("all")
+        
+    path = 'visuals_agent/frames'
+
+    if viz_type == "pdf":
+        frames = sorted(os.listdir(path))
+        imgs = []
+            
+        for fr in frames:
+            if fr.startswith("."):
+                continue
+            img_path = path + "/" + fr
+            img = PIL.Image.open(img_path)
+            conv_im = img.convert("RGB")
+            imgs.append(conv_im)
+            os.remove(img_path)
+                
+        imgs[0].save("visuals_agent/trials/trial" + str(trial_num).zfill(3) + ".pdf",
+                     save_all=True,
+                     quality=100,
+                     append_images = imgs[1:])
+
+    elif viz_type == "video":
+        subprocess.run("ffmpeg -framerate {} -i visuals_agent/frames/frame%03d.png -c:v libx264 -profile:v high -crf 10 -pix_fmt yuv420p visuals_agent/trial_videos/trial{}.mp4".format(frame_rate, str(trial_num).zfill(3)).split(" "))
+        for file in os.listdir("visuals_agent/frames"):
+            os.unlink("visuals_agent/frames/{}".format(file))
+        
+        
+        
+    return ax
 
 if __name__ == '__main__':
     main()
