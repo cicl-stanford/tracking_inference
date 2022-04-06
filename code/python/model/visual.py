@@ -443,13 +443,13 @@ def unity_transform_trial(trial, generate_shapes=True):
 # Visualize Agent Behavior #
 ############################
 
-def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=565, unity_background=False, kde_method="FFT"):
+def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=465, unity_background=False, kde_method="FFT"):
     
     color = ['red', 'blue', 'green']
     
     x, weights = zip(*density_samples[hole])
-    unity_x = [convertCoordinate(pt, 100)[0] for pt in x]
-    x = np.array(unity_x)
+    # unity_x = [convertCoordinate(pt, 100)[0] for pt in x]
+    x = np.array(x)
     weights = np.array(weights)
 
     # print(x)
@@ -460,7 +460,7 @@ def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=56
         offset = 480
     else:
         # x_grid = np.linspace(90, 610, 520)
-        x_grid = np.linspace(10,585,600)
+        x_grid = np.linspace(39,561,600)
 
 
     if kde_method == "FFT":
@@ -472,7 +472,7 @@ def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=56
     
     p += offset
     
-    
+    # print(x_grid)
 
     if unity_background:
         p = np.insert(p, 0, offset)
@@ -482,11 +482,12 @@ def graph_conditional_dist(ax, hole, density_samples, multiplier=8000, offset=56
     else:
         p = np.insert(p, 0, offset)
         p = np.append(p, offset)
-        x_grid = np.insert(x_grid, 0, 90)
-        x_grid = np.append(x_grid, 610)
+        x_grid = np.insert(x_grid, 0, 39)
+        x_grid = np.append(x_grid, 561)
     
     col = color[hole]
     ax.fill(x_grid, p, color=col, alpha=0.5)
+
     
     return ax
 
@@ -505,11 +506,13 @@ def visualize_frame(trial,
     for shape_name, shape in shapes:
         trial['obstacles'][shape_name]['shape'] = shape
 
+
     snapshot(trial, 
             "visuals_agent/frames/", 
             frame_name,
             ball_pos=ball_pos,
             unity_coordinates=True)
+
 
     img = plt.imread("visuals_agent/frames/{}.png".format(frame_name))
     fig, ax = plt.subplots()
@@ -523,8 +526,8 @@ def visualize_frame(trial,
     elif action == "initialize":
         label = "initialize"
 
-    ax.text(350,
-            650,
+    ax.text(300,
+            550,
             label,
             fontsize=16,
             verticalalignment="center",
@@ -536,19 +539,19 @@ def visualize_frame(trial,
 
     draw_eye_plt(ax, eye_pos)
 
-    ax.text(220, 60,
+    ax.text(151, -30,
             "1",
             color="red",
             fontsize=10,
             verticalalignment="center",
             horizontalalignment="center")
-    ax.text(350, 60,
+    ax.text(300, -30,
             "2", 
             color="blue",
             fontsize=10,
             verticalalignment="center",
             horizontalalignment="center")
-    ax.text(480, 60,
+    ax.text(448, -30,
             "3",
             color="green",
             fontsize=10,
@@ -564,7 +567,7 @@ def visualize_frame(trial,
 def draw_eye_plt(ax, eye_pos):
 
     eye_x = eye_pos[0]
-    eye_y = 700 - eye_pos[1]
+    eye_y = 500 - eye_pos[1]
 
     outline = plt.Circle((eye_x, eye_y), 11, color="black", zorder=3)
     sclera = plt.Circle((eye_x, eye_y), 10, color="white", zorder=3)
@@ -588,16 +591,16 @@ def visualize_simulation(ax, trial, sim_data, frame_num, eye_pos=None):
     y = []
     for pt in trajectory:
         x.append(pt['x'])
-        y.append(700 - pt['y'])
+        y.append(500 - pt['y'])
     
     start_pt = trajectory[0]
     start_x = start_pt['x']
-    start_y = 700 - start_pt['y']
+    start_y = 500 - start_pt['y']
     
     col = color[hole]
     ax.plot(x, y, "--", color=col)
     circle1 = plt.Circle((start_x, start_y), 20, color=col)
-    circle2 = plt.Circle((outcome['x'],700-outcome['y']), 20, color=col)
+    circle2 = plt.Circle((outcome['x'],500-outcome['y']), 20, color=col)
     
     ax.add_patch(circle1)
     ax.add_patch(circle2)

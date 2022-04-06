@@ -15,7 +15,7 @@ import copy
 import json
 import pickle
 from convert_coordinate import convertCoordinate
-# from IPython.display import Image
+from IPython.display import Image
 import PIL
 import subprocess
 import time
@@ -69,16 +69,16 @@ def load_trial(trial_num, experiment="inference", hole=None, drop_noise=0.2, col
 ##### EXTRACT GLOBAL PARAMETERS TO RECENTER UNITY COORDINATES AFTER TRANFORMATION #####
 ##### THIS COULD BE MOVED INTO THE CONVERT COORDINATE FUNCTION? ######
 
-trial_1 = load_trial(1)
+# trial_1 = load_trial(1)
 
-original_center_x = trial_1['screen_size']['width']/2
-original_center_y = trial_1['screen_size']['height']/2
+# original_center_x = trial_1['screen_size']['width']/2
+# original_center_y = trial_1['screen_size']['height']/2
 	
-new_center_x, new_center_y = convertCoordinate(original_center_x, original_center_y)
+# new_center_x, new_center_y = convertCoordinate(original_center_x, original_center_y)
 	
 # Transformation distance along x and y required to recenter unity coordinates after transformation
-DIFF_X = original_center_x - new_center_x
-DIFF_Y = original_center_y - new_center_y
+# DIFF_X = original_center_x - new_center_x
+# DIFF_Y = original_center_y - new_center_y
 
 
 def rotmat(rot):
@@ -176,14 +176,16 @@ class Agent:
 			bfp_y = self.world['ball_final_position']['y']
 
 			bfp_x_unity, bfp_y_unity = convertCoordinate(bfp_x, bfp_y)
-			self.world['ball_final_position_unity'] = {'x': bfp_x_unity+DIFF_X, 'y': bfp_y_unity+DIFF_Y}
+			# self.world['ball_final_position_unity'] = {'x': bfp_x_unity+DIFF_X, 'y': bfp_y_unity+DIFF_Y}
+			self.world['ball_final_position_unity'] = {'x': bfp_x_unity, 'y': bfp_y_unity}
 
 		self.observed_world = copy.deepcopy(self.world)
 
 		hole_positions_unity = []
 		for hole_pos in self.world['hole_positions']:
 			hole_x_unity, _ = convertCoordinate(hole_pos, 600)
-			hole_positions_unity.append(hole_x_unity + DIFF_X)
+			# hole_positions_unity.append(hole_x_unity + DIFF_X)
+			hole_positions_unity.append(hole_x_unity)
 
 		self.world['hole_positions_unity'] = hole_positions_unity
 
@@ -211,9 +213,11 @@ class Agent:
 		# Initialize eye position
 		x_pos = self.world['screen_size']['height']/2
 		y_pos = self.world['screen_size']['height']/2
-		self.eye_pos = np.array([x_pos,y_pos])
 
-		self.noise_field = np.ones((501,601))
+		unity_x_pos, unity_y_pos = convertCoordinate(x_pos, y_pos)
+		self.eye_pos = np.array([unity_x_pos,unity_y_pos])
+
+		self.noise_field = np.ones((500,600))
 
 		# Initialize perceptual noise on the verticies of the obstacles
 		for ob_dict in self.observed_world['obstacles'].values():
@@ -258,10 +262,11 @@ class Agent:
 				df_hole = df_priors[df_priors['hole'] == (i+1)]
 				for _, row in df_hole.iterrows():
 					# + 50 hack to align priors with unity translated coordinates
-					self.raw_history[i].append((row['x'] + DIFF_X, row['count'] / 100.0))
+					self.raw_history[i].append((row['x'], row['count'] / 100.0))
 			else:
 				# assume 1 sample has been drawn at each int x in [0, 600), each with weight=1
-				for j in range(50,650):
+				# for j in range(50,650):
+				for j in range(40, 560):
 					self.raw_history[i].append((j, 1))
 				# assume 1 sample has been drawn at the hole's location, each with weight=5
 				self.raw_history[i].append((self.world['hole_positions_unity'][i], 50))
@@ -293,7 +298,7 @@ class Agent:
 		use for kde method
 		"""
 		#  self.uncertainty[hole] = entropy(self.binned_history[hole])
-		x_grid = np.arange(49,651)
+		x_grid = np.arange(39,561)
 		kde = self.kde_obs[hole]
 
 		if self.kde_method == "FFT":
@@ -310,7 +315,8 @@ class Agent:
 		bfp_x = self.observed_world['ball_final_position_unity']['x']
 
 		if self.kde_method == "FFT":
-			bfp_x = int(np.round(bfp_x) - DIFF_X)
+			# bfp_x = int(np.round(bfp_x) - DIFF_X)
+			bfp_x = int(np.round(bfp_x))
 
 		if self.kde_method == "scikit":
 			log_p_truth = kde.score(np.array([bfp_x])[:, np.newaxis])
@@ -323,7 +329,7 @@ class Agent:
 		return kde
 
 	def belief_update_hole(self, sim_outcome, hole, perception=True):
-		self.raw_history[hole].append((sim_outcome, self.sample_weight))  # each real sample has weight=10
+		self.raw_history[hole].append((sim_outcome, self.sample_weight))
 		kde = self.make_kde(hole)
 		self.kde_obs[hole] = kde
 
@@ -360,7 +366,8 @@ class Agent:
 
 	def fpoc(self, eye_pos, spread=1000):
 
-		y,x = np.mgrid[100:601:1, 50:651:1]
+		# y,x = np.mgrid[100:601:1, 50:651:1]
+		y,x = np.mgrid[0:500:1, 0:600:1]
 		pos = np.dstack((x,y))
 
 		probs = multivariate_normal.pdf(pos, eye_pos, cov=spread)
@@ -403,7 +410,8 @@ class Agent:
 				if np.random.binomial(1, look_prob):
 
 					contact_point = event['contact_point']
-					col_pos_arr = np.array([contact_point['x'] + DIFF_X, contact_point['y'] + DIFF_Y])
+					# col_pos_arr = np.array([contact_point['x'] + DIFF_X, contact_point['y'] + DIFF_Y])
+					col_pos_arr = np.array([contact_point['x'], contact_point['y']])
 					sampled_pos = np.random.multivariate_normal(col_pos_arr, var)
 					look_list.append((col_type, sampled_pos))
 
@@ -527,11 +535,13 @@ class Agent:
 
 		hp_x_unity, hp_y_unity = convertCoordinate(hp_x, hp_y)
 
-		hp_x_unity = int(np.round(hp_x_unity + DIFF_X))
-		hp_y_unity = int(np.round(hp_y_unity + DIFF_Y))
+		# hp_x_unity = int(np.round(hp_x_unity + DIFF_X))
+		# hp_y_unity = int(np.round(hp_y_unity + DIFF_Y))
+		col = int(np.round(hp_x_unity))
+		row = int(np.round(hp_y_unity))
 
-		row = hp_y_unity - 100
-		col = hp_x_unity - 50
+		# row = hp_y_unity - 100
+		# col = hp_x_unity - 50
 
 		multiplier = self.noise_field[row, col]
 
@@ -545,12 +555,13 @@ class Agent:
 		if self.experiment == "inference": 
 			actual_bfp = self.world['ball_final_position_unity']['x']
 			ball_noise, _ = self.generate_ball_noise()
+			print(ball_noise)
 			# print(ball_noise)
 			observed_pos = actual_bfp + ball_noise
-			if observed_pos > 620:
-				observed_pos = 620
-			if observed_pos < 80:
-				observed_pos = 80
+			if observed_pos > 561:
+				observed_pos = 560
+			if observed_pos < 39:
+				observed_pos = 40
 			self.observed_world['ball_final_position_unity']['x'] = observed_pos
 		
 		for _, ob_dict in self.observed_world['obstacles'].items():
@@ -605,7 +616,7 @@ class Agent:
 			world = visual.unity_transform_trial(world, generate_shapes=gen_shapes)
 
 			
-		ball_pos = world['ball_final_position']
+		ball_pos = world['ball_final_position_unity']
 		if show_eye:
 			eye_pos = self.eye_pos
 		else:
@@ -626,12 +637,12 @@ class Agent:
 		if unity_background:
 
 			img = plt.imread("../../../figures/images/jpg/final/world_{}.png".format(self.trial_num))
-			y,x = np.mgrid[500:-1:-1, 0:601:1]
+			y,x = np.mgrid[500:0:-1, 0:600:1]
 
 		else:
 			self.visualize_agent_state()
 			img = plt.imread("visuals_agent/distort_world.png")
-			y,x = np.mgrid[600:99:-1, 50:651:1]
+			y,x = np.mgrid[500:0:-1, 0:600:1]
 
 
 		nf = self.noise_field
@@ -641,7 +652,7 @@ class Agent:
 
 		ax.contourf(x,y,nf,alpha=0.3)
 
-		ax = draw_eye_plt(ax, self.eye_pos)
+		ax = visual.draw_eye_plt(ax, self.eye_pos)
 		ax.axis("off")
 
 		if save:
@@ -677,14 +688,14 @@ class Agent:
 			if unity_coordinates:
 
 				rot_vert = (rotmat(ob_dict['rotation'])@verticies.T).T
-				translate_vert = rot_vert + np.array([pos_x + DIFF_X, pos_y + DIFF_Y])
+				# translate_vert = rot_vert + np.array([pos_x + DIFF_X, pos_y + DIFF_Y])
+				translate_vert = rot_vert + np.array([pos_x, pos_y])
 
 				verticies = [list(convertCoordinate(x,y)) for x,y in translate_vert.tolist()]
 
 
 			shapes.append((shape, verticies))
 			vertex_noise.append((shape, ob_dict['vertex_noise']))
-
 
 		return shapes, vertex_noise
 
@@ -861,7 +872,8 @@ def run_fixed_sample(trial_num, num_samples, bw=20, seed=None, perception=True, 
 
 					record_timestep(record, agent, timestep, "sim_look", (hole, sim_outcome, sim_data['ball_position']))
 
-	ball_pos = agent.observed_world["ball_final_position_unity"]['x'] - DIFF_X
+	# ball_pos = agent.observed_world["ball_final_position_unity"]['x'] - DIFF_X
+	ball_pos = agent.observed_world["ball_final_position_unity"]['x']
 	for hole in [0, 1, 2]:
 		kde = agent.make_kde(hole)
 		if agent.kde_method == "FFT":

@@ -140,8 +140,8 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 		x, y = ball.position.x, ball.position.y
 		if convert_coordinates:
 			x, y = convert_coordinate.convertCoordinate(x, y)
-			x += DIFF_X
-			y += DIFF_Y
+			# x += DIFF_X
+			# y += DIFF_Y
 
 		ball_pos.append({'x' : x,
 						 'y' : y})
