@@ -37,11 +37,9 @@ def main():
 	c['collision_noise_mean'] = 1
 	c['collision_noise_sd'] = 0
 	# for i in range(0,5):
-	# print(c)
 	data = run_simulation(c) 
 	visual.visualize(c, data)
 	# tmp = utils.loss(prop = 0, target = 50, sd = 2)
-	# print("tmp", tmp)
 	# pass
 	# path_screenshot_write = 'data/images/pygame'
 	# for world in range(1,201):
@@ -58,20 +56,6 @@ def main():
 
 def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False, distorted=False):
 
-	# print("Engine simulate function")
-	# print()
-
-	if convert_coordinates:
-
-		original_center_x = c['screen_size']['width']/2
-		original_center_y = c['screen_size']['height']/2
-    
-		new_center_x, new_center_y = convert_coordinate.convertCoordinate(original_center_x, original_center_y)
-    
-		# Transformation distance along x and y required to recenter unity coordinates after transformation
-		DIFF_X = original_center_x - new_center_x
-		DIFF_Y = original_center_y - new_center_y
-
 	# PHYSICS PARAMETERS
 	space = pymunk.Space()
 	space.gravity = (0.0, c['gravity'])
@@ -80,7 +64,6 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 
 	# noise applied to how the ball is dropped 
 	ball_drop_noise(c, sd = c['drop_noise'])
-	# print("sd = c['drop_noise']", c['drop_noise'])
 
 	# CREATE OBJECTS 
 	make_walls(c, space)
@@ -107,7 +90,7 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 		ch = space.add_collision_handler(shape_code['ball'], shape_code[ob])
 		ch.separate = jitter_velocity_collision
 		ch.data['ball'] = ball
-		# ch.data['collision_noise_record'] = []
+		ch.data['collision_noise_record'] = []
 		ch.data['collision_noise_sd'] = c['collision_noise_sd']
 		ch.data['collision_noise_mean'] = c['collision_noise_mean']
 
@@ -140,8 +123,6 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 		x, y = ball.position.x, ball.position.y
 		if convert_coordinates:
 			x, y = convert_coordinate.convertCoordinate(x, y)
-			# x += DIFF_X
-			# y += DIFF_Y
 
 		ball_pos.append({'x' : x,
 						 'y' : y})
@@ -150,7 +131,6 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 		h.data['current_timestep'] = timestep
 
 		if time.time() > start + TIMEOUT:
-			# print('here')
 			drop = {"pos": ball_pos[0], 'step': 0, 'sd': c['drop_noise'], 'angle': c['ball_initial_angle']}
 			collisions = clean_collisions(collisions=h.data['collisions'])
 			all_data['drop'] = drop
@@ -158,7 +138,6 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 			all_data['ball_position'] = ball_pos
 			all_data['ball_velocity'] = ball_vel
 			all_data['top_surfaces'] = top_surfaces
-			# print("here")
 			return all_data
 	
 	# clean up collisions
@@ -166,11 +145,10 @@ def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False,
 	# start_pos_y = 600
 	# start_ball_pos = {'x': start_pos_x, 'y': start_pos_y}
 	drop = {"pos": ball_pos[0], 'step': 0, 'sd': c['drop_noise'], 'angle': c['ball_initial_angle']}
-	# print("here")
 	collisions = clean_collisions(collisions=h.data['collisions'])
 	all_data['drop'] =  drop
 	all_data['collisions'] = collisions
-	# all_data['collision_noise_record'] = ch.data['collision_noise_record']
+	all_data['collision_noise_record'] = ch.data['collision_noise_record']
 	all_data['ball_position'] = ball_pos
 	all_data['ball_velocity'] = ball_vel
 	all_data['top_surfaces'] = top_surfaces
@@ -349,17 +327,25 @@ def generate_distorted_shape(ob_dict, eye_pos, perturb=10, divider=4, version=1)
 def record_collision(arbiter, space, data):
 	ob1 = inverse_shape_code[int(arbiter.shapes[0].collision_type)]
 	ob2 = inverse_shape_code[int(arbiter.shapes[1].collision_type)]
-	# data['collisions'].append((data['current_timestep'], ob1, ob2))
+
 	contact_point = arbiter.contact_point_set.points[0].point_b
 
-	if space.convert_coordinates:
-		x, y = convert_coordinate.convertCoordinate(contact_point.x, contact_point.y)
+	assert ob1 == "ball"
+
+	if ob2 == "ground":
+		ball_pos = arbiter.shapes[0].body.position
+		look_point_x = ball_pos.x
+		look_point_y = ball_pos.y
 	else:
-		x = contact_point.x
-		y = contact_point.y
+		contact_point = arbiter.contact_point_set.points[0].point_b
+		look_point_x = contact_point.x
+		look_point_y = contact_point.y
+
+	if space.convert_coordinates:
+		look_point_x, look_point_y = convert_coordinate.convertCoordinate(look_point_x, look_point_y)
 
 	data['collisions'].append({'objects': (ob1, ob2), 'step': data['current_timestep'],
-							   'contact_point': {'x': x, 'y': y }})
+							   'look_point': {'x': look_point_x, 'y': look_point_y }})
 	# disable collsion noise
 	data['ball'].velocity_func = pymunk.Body.update_velocity
 	return True
@@ -373,8 +359,7 @@ def ground_collision(arbiter, space, data):
 def jitter_velocity_collision(arbiter, space, data):
 
 	# Grab the contact point from the last collision recorded in the collision handler h
-	contact_point = space._handlers[2].data['collisions'][-1]['contact_point']
-	# print(contact_point)
+	contact_point = space._handlers[2].data['collisions'][-1]['look_point']
 	# already converted to unity in record_collision
 	if not space.convert_coordinates:
 		unity_x, unity_y = convert_coordinate.convertCoordinate(contact_point['x'], contact_point['y'])
@@ -389,15 +374,14 @@ def jitter_velocity_collision(arbiter, space, data):
 
 	# velocity_multiplier = utils.gaussian_noise(data['collision_noise_mean'], modified_sd) #potentially asymmetric noise
 	mean = data['collision_noise_mean']
-	sd = modified_sd
 
-	if sd == 0:
+	if modified_sd == 0:
 		velocity_multiplier = mean
 	else:
-		lower_bound = (0 - mean)/sd
-		velocity_multiplier = truncnorm.rvs(lower_bound, np.inf, mean, sd)
+		lower_bound = (0 - mean)/modified_sd
+		velocity_multiplier = truncnorm.rvs(lower_bound, np.inf, mean, modified_sd)
 
-	# data['collision_noise_record'].append(velocity_multiplier)
+	data['collision_noise_record'].append(velocity_multiplier)
 	
 	# change magnitude of velocity
 	cur_vel = data['ball'].velocity

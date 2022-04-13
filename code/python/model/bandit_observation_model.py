@@ -322,7 +322,8 @@ class Agent:
 			log_p_truth = kde.score(np.array([bfp_x])[:, np.newaxis])
 			p_truth = np.exp(log_p_truth)
 		elif self.kde_method == "FFT":
-			p_truth = p[bfp_x]
+			# Index offset because the FFT evaluation grid starts at 39
+			p_truth = p[bfp_x - 39]
 
 		self.estimated_rewards[hole] = p_truth
 		self.entropy = entropy(self.estimated_rewards)
@@ -409,9 +410,8 @@ class Agent:
 
 				if np.random.binomial(1, look_prob):
 
-					contact_point = event['contact_point']
-					# col_pos_arr = np.array([contact_point['x'] + DIFF_X, contact_point['y'] + DIFF_Y])
-					col_pos_arr = np.array([contact_point['x'], contact_point['y']])
+					look_point = event['look_point']
+					col_pos_arr = np.array([look_point['x'], look_point['y']])
 					sampled_pos = np.random.multivariate_normal(col_pos_arr, var)
 					look_list.append((col_type, sampled_pos))
 
@@ -535,13 +535,8 @@ class Agent:
 
 		hp_x_unity, hp_y_unity = convertCoordinate(hp_x, hp_y)
 
-		# hp_x_unity = int(np.round(hp_x_unity + DIFF_X))
-		# hp_y_unity = int(np.round(hp_y_unity + DIFF_Y))
 		col = int(np.round(hp_x_unity))
 		row = int(np.round(hp_y_unity))
-
-		# row = hp_y_unity - 100
-		# col = hp_x_unity - 50
 
 		multiplier = self.noise_field[row, col]
 
@@ -555,8 +550,6 @@ class Agent:
 		if self.experiment == "inference": 
 			actual_bfp = self.world['ball_final_position_unity']['x']
 			ball_noise, _ = self.generate_ball_noise()
-			print(ball_noise)
-			# print(ball_noise)
 			observed_pos = actual_bfp + ball_noise
 			if observed_pos > 561:
 				observed_pos = 560
@@ -573,14 +566,10 @@ class Agent:
 	# Simulate in the current world given the agent's perceptual uncertainty  
 	def simulate_world(self, hole=None, convert_coordinates=True, distorted=True, perception=True):
 
-		# print("Agent sim function")
-
 		if perception:
 			world = self.observed_world
 		else:
 			world = self.world
-
-		# print(world)
 
 		if (hole is None):
 			hole = world['hole_dropped_into']
@@ -877,9 +866,9 @@ def run_fixed_sample(trial_num, num_samples, bw=20, seed=None, perception=True, 
 	for hole in [0, 1, 2]:
 		kde = agent.make_kde(hole)
 		if agent.kde_method == "FFT":
-			p_grid = kde.evaluate(np.arange(49, 651))
+			p_grid = kde.evaluate(np.arange(39, 561))
 			agent.kde_obs.append(p_grid)
-			p = p_grid[int(np.round(ball_pos))]
+			p = p_grid[int(np.round(ball_pos) - 39)]
 		else:
 			raise Exception("KDE method {} not implemented for fixed sample model".format(agent.kde_method))
 
@@ -920,7 +909,7 @@ def run_bandit_all_trials(num_runs=30, decision_threshold=0.6, tradeoff_param=0.
 			look_list = np.stack(df_record[(df_record["action"] == "sim_look") | 
 				(df_record["action"] == "initialize")]["eye_pos"].to_numpy())
 
-			look_list = look_list - np.array([[DIFF_X, DIFF_Y]])
+			# look_list = look_list - np.array([[DIFF_X, DIFF_Y]])
 
 
 			judgment_rt["trial"].append(tr_num)
@@ -1028,7 +1017,7 @@ def run_fixed_sample_all_trials(num_samples=100, bw=20, noise_params=(15.0,15.0,
 		look_list = np.stack(df_record[(df_record["action"] == "sim_look") | 
 			(df_record["action"] == "initialize")]["eye_pos"].to_numpy())
 
-		look_list = look_list - np.array([[DIFF_X, DIFF_Y]])
+		# look_list = look_list - np.array([[DIFF_X, DIFF_Y]])
 
 		judgment_rt["trial"].append(tr_num)
 		judgment_rt["hole1"].append(agent.estimated_rewards[0])
