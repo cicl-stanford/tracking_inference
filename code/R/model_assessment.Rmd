@@ -574,8 +574,13 @@ df_to_show = left_join(df_model_mean_rt,
                        by = c("trial")) %>% 
   mutate(model = "Bandit")
 
-model_cor = round(cor(df_to_show$mean_log_time, df_to_show$mean_log_rt), digits=2)
-model_rmse = round(RMSE(df_to_show$mean_log_time, df_to_show$mean_log_rt), digits=2)
+scaled_model = lm(mean_log_rt ~ mean_log_time,
+                  data = df_to_show)
+
+scaled_model_responses = predict(scaled_model)
+
+model_cor = round(cor(scaled_model_responses, df_to_show$mean_log_rt), digits=2)
+model_rmse = round(RMSE(scaled_model_responses, df_to_show$mean_log_rt), digits=2)
 
 xvals = c(0.5, 1.0, 1.5, 2.0, 2.5)
 yvals = c(7.0, 7.5, 8.0, 8.5)
@@ -710,8 +715,13 @@ df_to_show = df_fixed_sample_judge_rt %>%
   left_join(df_data_mean_rt, by = "trial") %>% 
   mutate(model = "Uniform Sampler")
 
-fixed_sample_rt_cor = round(cor(df_to_show$log_time, df_to_show$mean_log_rt), digits = 2)
-fixed_sample_rt_rmse = round(RMSE(df_to_show$log_time, df_to_show$mean_log_rt), digits = 2)
+scaled_model = lm(mean_log_rt ~ log_time,
+                  data = df_to_show)
+
+scaled_model_predictions = predict(scaled_model)
+
+fixed_sample_rt_cor = round(cor(scaled_model_predictions, df_to_show$mean_log_rt), digits = 2)
+fixed_sample_rt_rmse = round(RMSE(scaled_model_predictions, df_to_show$mean_log_rt), digits = 2)
 
 ggplot(data = df_to_show, mapping = aes(x = log_time, y = mean_log_rt)) +
   geom_linerange(mapping = aes(ymin = lower,
