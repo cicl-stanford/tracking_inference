@@ -108,5 +108,14 @@ To generate model behavior for the sequential sampler at a given parameter setti
 python run_model.py bandit <seed> <decision_threshold> <tradeoff> <bandwidth> <sample_weight>
 ```
 
-The model will generate a csv recording judgments and number of collisions for 30 runs on each trial in the folder `model_performance/judgment_rt`. The model will also generate a pickle file recording all the physical events from all the simulations in the folder `model_performance/collisions`.
+The script will generate a csv recording judgments and number of collisions for 30 runs on each trial in the folder `model_performance/judgment_rt`. The model will also generate a pickle file recording all the physical events from all the simulations in the folder `model_performance/collisions`.
+
+The uniform sampler has two parameters: the number of samples and the bandwidth of the kernel density.
+
+You can generate model behavior for the uniform sampler in an analogous way:
+
+```
+python run_model.py fixed_sample <seed> <num_samples> <bandwidth>
+```
+
 
