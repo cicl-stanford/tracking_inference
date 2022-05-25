@@ -75,7 +75,7 @@ def rotmat(rot):
 
 class Agent:
 	
-	def __init__(self, trial_num, experiment='inference', decision_threshold=1.0, tradeoff_param=0.03, sample_weight=450, bw=30, empirical_priors=False, kde_method="FFT", obs_noise=0, ball_noise=10, drop_noise=0.2, col_mean=0.8, col_sd=0.2, hole=None):
+	def __init__(self, trial_num, experiment='inference', decision_threshold=1.0, tradeoff_param=0.03, sample_weight=450, bw=30, empirical_priors=False, kde_method="FFT", drop_noise=0.2, col_mean=0.8, col_sd=0.2, hole=None):
 		
 		self.experiment = experiment
 		self.trial_num = trial_num
@@ -245,7 +245,6 @@ class Agent:
 			
 		
 		sim_data = engine.run_simulation(world,
-										 None,
 										 convert_coordinates=convert_coordinates,
 										 distorted=False)
 		return sim_data
@@ -298,14 +297,14 @@ class Agent:
 
 
 
-def run_bandit(trial_num, decision_threshold=1.0, tradeoff_param=0.03, sample_weight=450, bw=30.0, seed=None, max_iter=100, noise_params=(0, 0, 0.2, 0.8, 0.2)):
+def run_bandit(trial_num, decision_threshold=0.95, tradeoff_param=0.003, sample_weight=950, bw=30.0, seed=None, max_iter=100, noise_params=(0.2, 0.8, 0.2)):
 
 	if not (seed is None):
 		np.random.seed(seed)
 
-	obs_noise, ball_noise, drop_noise, col_mean, col_sd = noise_params
+	drop_noise, col_mean, col_sd = noise_params
 
-	agent = Agent(trial_num, decision_threshold=decision_threshold, tradeoff_param=tradeoff_param, sample_weight=sample_weight, bw=bw, obs_noise=obs_noise, ball_noise=ball_noise, drop_noise=drop_noise, col_mean=col_mean, col_sd=col_sd)
+	agent = Agent(trial_num, decision_threshold=decision_threshold, tradeoff_param=tradeoff_param, sample_weight=sample_weight, bw=bw, drop_noise=drop_noise, col_mean=col_mean, col_sd=col_sd)
 
 	agent._initialize_rewards_uncertainty(empirical_priors=False)
 	agent.entropy = entropy(agent.estimated_rewards)
@@ -345,14 +344,14 @@ def run_bandit(trial_num, decision_threshold=1.0, tradeoff_param=0.03, sample_we
 	return agent, collision_record
 
 
-def run_fixed_sample(trial_num, num_samples=80, bw=30.0, seed=None, noise_params=(0,0,0.2,0.8,0.2)):
+def run_fixed_sample(trial_num, num_samples=40, bw=50.0, seed=None, noise_params=(0.2,0.8,0.2)):
 
 	if not (seed is None):
 		np.random.seed(seed)
 
-	obs_noise, ball_noise, drop_noise, col_mean, col_sd = noise_params
+	drop_noise, col_mean, col_sd = noise_params
 
-	agent = Agent(trial_num, sample_weight=1, bw=bw, obs_noise=obs_noise, ball_noise=ball_noise, drop_noise=drop_noise, col_mean=col_mean, col_sd=col_sd)
+	agent = Agent(trial_num, sample_weight=1, bw=bw, drop_noise=drop_noise, col_mean=col_mean, col_sd=col_sd)
 	agent.estimated_rewards = np.array([0.0,0.0,0.0], dtype=np.float64)
 
 	# collision_record = []
@@ -397,7 +396,7 @@ def run_fixed_sample(trial_num, num_samples=80, bw=30.0, seed=None, noise_params
 	return agent, collision_record
 
 
-def run_bandit_all_trials(num_runs=30, decision_threshold=1.0, tradeoff_param=0.03, sample_weight=450, bw=30.0, max_iter=100, noise_params=(0.0, 0.0, 0.2, 0.8, 0.2), start=0, end=150):
+def run_bandit_all_trials(num_runs=30, decision_threshold=0.95, tradeoff_param=0.003, sample_weight=950, bw=30.0, max_iter=100, noise_params=(0.2, 0.8, 0.2), start=0, end=150):
 
 	time_start = time.time()
 	world_num_list = os.listdir("../../../data/stimuli/ground_truth/")
@@ -437,8 +436,8 @@ def run_bandit_all_trials(num_runs=30, decision_threshold=1.0, tradeoff_param=0.
 
 	df_judgment_rt = pd.DataFrame(judgment_rt)
 
-	judgement_rt_filename = "model_performance/judgment_rt/bandit_runs_{}_threshold_{}_tradeoff_{}_sample_weight_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.csv".format(num_runs, decision_threshold, tradeoff_param, sample_weight, bw, noise_params[2], noise_params[3], noise_params[4], start, end)
-	collisions_filename = "model_performance/collisions/bandit_runs_{}_threshold_{}_tradeoff_{}_sample_weight_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.pickle".format(num_runs, decision_threshold, tradeoff_param, sample_weight, bw, noise_params[2], noise_params[3], noise_params[4], start, end)
+	judgement_rt_filename = "model_performance/judgment_rt/bandit_runs_{}_threshold_{}_tradeoff_{}_sample_weight_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.csv".format(num_runs, decision_threshold, tradeoff_param, sample_weight, bw, noise_params[0], noise_params[1], noise_params[2], start, end)
+	collisions_filename = "model_performance/collisions/bandit_runs_{}_threshold_{}_tradeoff_{}_sample_weight_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.pickle".format(num_runs, decision_threshold, tradeoff_param, sample_weight, bw, noise_params[0], noise_params[1], noise_params[2], start, end)
 
 	df_judgment_rt.to_csv(judgement_rt_filename)
 
@@ -451,7 +450,7 @@ def run_bandit_all_trials(num_runs=30, decision_threshold=1.0, tradeoff_param=0.
 	return df_judgment_rt, collisions
 
 
-def run_fixed_sample_all_trials(num_samples=80, bw=30.0, noise_params=(0,0,0.2,0.8,0.2), start=0, end=150):
+def run_fixed_sample_all_trials(num_samples=40, bw=50.0, noise_params=(0.2,0.8,0.2), start=0, end=150):
 
 	time_start = time.time()
 
@@ -466,7 +465,7 @@ def run_fixed_sample_all_trials(num_samples=80, bw=30.0, noise_params=(0,0,0.2,0
 	for tr_num in world_num_list:
 		print("Trial:", tr_num)
 
-		agent, collision_record = run_fixed_sample_simple(tr_num, num_samples=num_samples, bw=bw, seed=None, noise_params=noise_params)
+		agent, collision_record = run_fixed_sample(tr_num, num_samples=num_samples, bw=bw, seed=None, noise_params=noise_params)
 		posterior = agent.estimated_rewards
 
 		num_cols = len(collision_record['col_obs']) + len(collision_record['col_wall']) + len(collision_record['col_ground'])
@@ -483,8 +482,8 @@ def run_fixed_sample_all_trials(num_samples=80, bw=30.0, noise_params=(0,0,0.2,0
 
 	df_judgment_rt = pd.DataFrame(judgment_rt)
 
-	judgement_rt_filename = "model_performance/judgment_rt/fixed_sample_num_samples_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.csv".format(num_samples, bw, noise_params[2], noise_params[3], noise_params[4], start, end)
-	collisions_filename = "model_performance/collisions/fixed_sample_num_samples_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.pickle".format(num_samples, bw, noise_params[2], noise_params[3], noise_params[4], start, end)
+	judgement_rt_filename = "model_performance/judgment_rt/fixed_sample_num_samples_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.csv".format(num_samples, bw, noise_params[0], noise_params[1], noise_params[2], start, end)
+	collisions_filename = "model_performance/collisions/fixed_sample_num_samples_{}_bw_{}_noise_params_{}_{}_{}_trial_{}_{}.pickle".format(num_samples, bw, noise_params[0], noise_params[1], noise_params[2], start, end)
 
 	df_judgment_rt.to_csv(judgement_rt_filename)
 

@@ -3,7 +3,9 @@ import pandas as pd
 import pickle
 from KDEpy import FFTKDE
 from sklearn.neighbors import KernelDensity
+from skimage.measure import block_reduce
 import cv2
+import os
 import time
 
 
@@ -29,6 +31,13 @@ def load_model_perf(model_version):
 
 
 	return model_perf
+
+
+def load_human_heatmap(tr_num, split="train"):
+    with open("heatmaps/human_trial_{}_{}.pickle".format(split, tr_num), "rb") as f:
+        human_hm = pickle.load(f)
+        
+    return human_hm
 
 
 def make_kde_grid(grid_step):
@@ -82,87 +91,49 @@ def convert_arr(arr, grid_step):
     return np.array(sig, dtype=np.float32)
 
 
-def compare_trial(trial_index, model_perf, human_data, grid_step, normalize=False):
+def compute_emd(model_hist, human_hist, grid_step=20):
+    
+    model_sig = convert_arr(model_hist, grid_step)
+    human_sig = convert_arr(human_hist, grid_step)
+    
+    dist, _, flow = cv2.EMD(model_sig, human_sig, cv2.DIST_L2)
+    
+    return dist
 
-	# start = time.time()
+world_files = os.listdir("../../../figures/images/png/final/")
+world_nums = sorted([int(file[6:-4]) for file in world_files])
 
-	kde_grid, row_num, col_num = make_kde_grid(grid_step)
-
-	trial_num, model_looks = model_perf[trial_index]
-	if type(model_looks) == list:
-		model_looks = np.concatenate(model_looks)
-	# Filter values outside the grid
-	model_looks[model_looks < 0] = 0
-	model_x_looks = model_looks[:,0]
-	model_y_looks = model_looks[:,1]
-	model_x_looks[model_x_looks > 600] = 599.9
-	model_y_looks[model_y_looks > 500] = 499.9
-
-	model_looks = np.concatenate((model_x_looks[:,np.newaxis], model_y_looks[:,np.newaxis]), axis=1)
-
-	model_hist = make_kde(model_looks, grid_step)
-	if normalize:
-		model_hist = model_hist/np.sum(model_hist)
-
-	human_looks = human_data[human_data["trial"] == trial_num][['x', 'y']].to_numpy()
-	human_hist = make_kde(human_looks, grid_step)
-	if normalize:
-		human_hist = human_hist/np.sum(human_hist)
-
-	model_sig = convert_arr(model_hist, grid_step)
-	human_sig = convert_arr(human_hist, grid_step)
-
-	dist, _, flow = cv2.EMD(human_sig, model_sig, cv2.DIST_L2)
-
-
-	return dist
-
-
-def baseline_compare(human_data, grid_step, testing=False):
-
-	dist_dict = {"trial": [], "distance": []}
-
-	kde_grid, row_num, col_num = make_kde_grid(grid_step)
-
-	baseline_hist = np.ones((row_num,col_num))/(row_num*col_num)
-	baseline_sig = convert_arr(baseline_hist, grid_step)
-
-	trial_list = human_data["trial"].unique()
-	if testing:
-		trial_list = trial_list[:5]
-
-	for trial_num in trial_list:
-
-		print("Trial:", trial_num)
-
-		human_looks = human_data[human_data["trial"] == trial_num][['x', 'y']].to_numpy()
-		human_hist = make_kde(human_looks, grid_step)
-
-		human_hist = human_hist/np.sum(human_hist)
-
-		human_sig = convert_arr(human_hist, grid_step)
-
-		dist, _, flow = cv2.EMD(human_sig, baseline_sig, cv2.DIST_L2)
-
-
-		dist_dict['trial'].append(trial_num)
-		dist_dict['distance'].append(dist)
-
-	return pd.DataFrame(dist_dict)
-
-
-
-
-
-def compare_trial_sample(trial_index, model_perf, human_data):
-
-	trial_num, model_looks = model_perf[trial_index]
-	model_looks = np.concatenate(model_looks)
-
-	human_looks = human_data[human_data["trial"] == trial_num][['x', 'y']].to_numpy()
-
-	dist = pyemd.emd_samples(model_looks, human_looks)
-
-	return dist
-
-
+def compute_emd_all_trials(model_pred, world_nums=world_nums):
+    
+    start_time = time.time()
+    tr_len = 501*601
+    
+    model_emd = []
+    
+    for i, tr_num in enumerate(world_nums):
+        
+        print("Trial:", tr_num)
+        
+        tr_start = i*tr_len
+        tr_pred = model_pred[tr_start:tr_start + tr_len]
+        
+        assert tr_pred.min() > -0.00001
+        tr_pred[tr_pred < 0] = 0
+        tr_pred /= np.sum(tr_pred)
+        
+        model_hm = tr_pred.reshape(501, 601)[:500, :600]
+        coarse_model_hm = block_reduce(model_hm, (20, 20), np.mean)
+        coarse_model_hm /= np.sum(coarse_model_hm)
+        
+        human_hm = load_human_heatmap(tr_num, split="test")[:500, :600]
+        coarse_human_hm = block_reduce(human_hm, (20,20), np.mean)
+        coarse_human_hm /= np.sum(coarse_human_hm)
+        
+        dist = compute_emd(coarse_model_hm, coarse_human_hm)
+        
+        model_emd.append(dist)
+        
+    print()
+    print("Runtime:", time.time() - start_time)
+    
+    return model_emd

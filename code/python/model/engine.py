@@ -54,12 +54,11 @@ def main():
 	# 	visual.visualize(c, data)
 	# 	# visual.snapshot(c, image_path = path_screenshot_write + "/", image_name = 'world' + str(world)) #save snapshot
 
-def run_simulation(c, noise_field=np.ones((500,600)), convert_coordinates=False, distorted=False):
+def run_simulation(c, convert_coordinates=False, distorted=False):
 
 	# PHYSICS PARAMETERS
 	space = pymunk.Space()
 	space.gravity = (0.0, c['gravity'])
-	space.noise_field = noise_field
 	space.convert_coordinates = convert_coordinates
 
 	# noise applied to how the ball is dropped 
@@ -358,28 +357,12 @@ def ground_collision(arbiter, space, data):
 
 def jitter_velocity_collision(arbiter, space, data):
 
-	# Grab the contact point from the last collision recorded in the collision handler h
-	contact_point = space._handlers[2].data['collisions'][-1]['look_point']
-	# already converted to unity in record_collision
-	if not space.convert_coordinates:
-		unity_x, unity_y = convert_coordinate.convertCoordinate(contact_point['x'], contact_point['y'])
-	else:
-		unity_x = contact_point['x']
-		unity_y = contact_point['y']
-	row = int(np.round(unity_y))
-	col = int(np.round(unity_x))
 
-	noise_multiplier = space.noise_field[row, col]
-	modified_sd = noise_multiplier*data['collision_noise_sd']
-
-	# velocity_multiplier = utils.gaussian_noise(data['collision_noise_mean'], modified_sd) #potentially asymmetric noise
 	mean = data['collision_noise_mean']
+	sd = data['collision_noise_sd']
 
-	if modified_sd == 0:
-		velocity_multiplier = mean
-	else:
-		lower_bound = (0 - mean)/modified_sd
-		velocity_multiplier = truncnorm.rvs(lower_bound, np.inf, mean, modified_sd)
+	lower_bound = (0 - mean)/sd
+	velocity_multiplier = truncnorm.rvs(lower_bound, np.inf, mean, sd)
 
 	data['collision_noise_record'].append(velocity_multiplier)
 	

@@ -26,7 +26,10 @@ def collect_info():
 	categories = ['first name', 'gender', 'age', 'race', 'ethnicity (Hispanic or non-Hispanic)']
 	participant = {}
 	for cat in categories:
-		inp = raw_input('Please type your ' + cat + ':\n')
+		# For python2
+		# inp = raw_input('Please type your ' + cat + ':\n')
+		# For python3
+		inp = input('Please type your ' + cat + ':\n')
 		print
 		# special handling for ethnicity
 		if cat == 'ethnicity (Hispanic or non-Hispanic)':
