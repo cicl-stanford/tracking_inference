@@ -4,4 +4,3 @@ __pycache__
 .ipynb_checkpoints
 *.ipynb
 .Rproj.user
-*grid_collisions/*.pickle
