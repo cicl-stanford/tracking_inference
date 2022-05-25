@@ -20,14 +20,93 @@ This section contains model code.
 
 6. `compute_regression_error.py` is a script to compute the squared error between distributions of human eye-movment and model eye-movement distributions predicted with features of model behavior.
 
-5. `evaluate_heatmaps.py` contains procedures to measure the earth-movers distance between two heatmaps representing distributions of fixations.
+7. `evaluate_heatmaps.py` contains procedures to measure the earth-movers distance between two heatmaps representing distributions of fixations.
 
-6. `compute_emd.py` contains code to run the heatmap evaluation for a given model file.
+8. `compute_emd.py` contains code to run the heatmap evaluation for a given model file.
 
-7. `visual.py` contains visualization tools for the model behavior.
+9. `visual.py` contains visualization tools for the model behavior.
 
-8. `config.py` contains code for generating new trial stimuli.
+10. `config.py` contains code for generating new trial stimuli.
 
-9. `utils.py` contains additional utilities and procedures for the model.
+11. `utils.py` contains additional utilities and procedures for the model.
 
-10. `model_performance` contains records of model performance, including judgments and response times, fixations locations, and computed earth-movers distance scores. Subfolders pre-pended with "grid" contain model behavior pre-computed on Stanford's high-performance computing cluster and are included for ease of replicating paper results.
+12. `model_performance` contains records of model performance, including judgments and response times, fixations locations, and computed earth-movers distance scores. Subfolders pre-pended with "grid" contain model behavior pre-computed on Stanford's high-performance computing cluster and are included for ease of replicating paper results.
+
+13. `heatmaps` contains precomputed kernel density estimates for regression analysis. Histograms are pre-computed for all physical features of all trials (obstacles, holes, ball location, center), as well as human eye-gaze distributions computed for a train set (half participants) and test set (all participants).
+
+
+### R
+
+This section contains analysis and visualization code to produce model figures.
+
+1. `analysis.Rmd` performs the grid search on the pre-computed model performance files. It then loads the top performing models and plots model results for the three different data signals.
+
+2. `figures` folder containing base figures for results presentation in the paper.
+
+
+### experiment
+
+#### exp_code
+
+1. `plinko_eyetracking.py` code to run the experiment. By default tracker is set to "dummy" mode, but can be connected to an actual eye-tracker by changing the ttype parameter at the top of the file.
+
+2. `Output` folder where experiment output is saved as json file (empty).
+
+
+#### images
+
+Images for presenting stimuli, pratice trials, and training stills.
+
+#### videos
+
+Pratice videos
+
+
+## data
+
+### human_data
+
+Contains compressed human data for the full experiment. The data is a pickled pandas dataframe compressed in xz format.
+
+### stimuli
+
+#### ground_truth
+
+Contains json files representing the 150 trial stimuli. This files can be used by the physics engine to represent and simulate in the world according to the given conditions.
+
+#### practice
+
+Contains json files representing the 2 practice stimuli.
+
+
+## figures
+
+### cogsci_2022
+
+Paper figures.
+
+### images
+
+Still images of the trial stimuli.
+
+
+# Replicating paper results
+
+## Using pre-computed model-performance
+
+## From scratch
+
+### Generate Model Behavior
+
+Model behavior for either the sequential sampler or the uniform sampler can be generated using the `run_model.py` script in `code/python/model/`.
+
+The sequential sampler has four parameters: a decision threshold, reward-uncertainty tradeoff, kernel density bandwidth, and sample weight.
+
+To generate model behavior for the sequential sampler at a given parameter setting navigate to the folder `code/python/model` and run the following:
+
+```
+python run_model.py bandit <seed> <decision_threshold> <tradeoff> <bandwidth> <sample_weight>
+```
+
+The model will generate a csv recording judgments and number of collisions for 30 runs on each trial in the folder `model_performance/judgment_rt`. The model will also generate a pickle file recording all the physical events from all the simulations in the folder `model_performance/collisions`.
+
