@@ -96,7 +96,7 @@ Still images of the trial stimuli.
 
 ## From scratch
 
-### Generate Model Behavior
+### Generate model behavior
 
 Model behavior for either the sequential sampler or the uniform sampler can be generated using the `run_model.py` script in `code/python/model/`.
 
@@ -118,4 +118,53 @@ You can generate model behavior for the uniform sampler in an analogous way:
 python run_model.py fixed_sample <seed> <num_samples> <bandwidth>
 ```
 
+Python libraries required to run the model are the following:
+- numpy
+- pandas
+- pymunk
+- pygame
+- scipy
+- scikit-learn
+- KDEpy
+
+### Compute earth mover's distance
+
+The `compute_emd.py` script takes a model and fits a regression from features of that model's behavior to the human distribution of eye-movement. It then computes the earth mover's distance between those predicted distributions and the actual human distributions. The script takes in a model events pickle file (model behavior generated in the collisions folder) and produces a csv giving the computed earth movers distance for each trial.
+
+To compute the earth mover's distance for a given model you can run the following code:
+
+```
+python compute_emd.py <model_type> <model_file>
+```
+
+The model type specifies which kind of model you are computing the emd for. The three allowable arguments are `bandit` (sequential sampler), `fixed_sample` (uniform sampler), or `visual_features` (visual features baseline). The model file should be the filename for the pickle file containing the record of the model events (the relative path is not required). For the visual features regression, no model file is required.
+
+The output of the emd computation is saved to the `model_performance/emd` folder. It will be named according to the corresponding model type.
+
+Python libraries required to compute EMD are the following:
+- numpy
+- pandas
+- scikit-learn
+- KDEpy
+- opencv
+- scikit-image
+
+# Running the experiment
+
+Code for the experiment is in `code/experiment/exp_code`
+
+To run the experiment type the following command:
+
+```
+python plinko_eyetracking.py
+```
+
+The experiment will begin by prompting you for demographic info in the command line and then switch over to a psychopy display for instructions and trials.
+
+Data from the experiment is saved to the output folder as a json file. By default, the script is left in "dummy" mode meaning the mouse is used in place of input from an eye-tracker. This can be changed by changing the ttype argument at the top of the script. 
+
+Python libraries required to run the experiment are the following:
+- numpy
+- psychopy
+- pygaze
 

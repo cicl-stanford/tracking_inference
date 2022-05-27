@@ -10,13 +10,11 @@ from scipy.stats import entropy, truncnorm, multivariate_normal
 from sklearn.neighbors import KernelDensity
 from KDEpy import FFTKDE
 import os
-import matplotlib.pyplot as plt
 import copy
 import json
 import pickle
 from convert_coordinate import convertCoordinate
 # from IPython.display import Image
-import PIL
 import subprocess
 import time
 

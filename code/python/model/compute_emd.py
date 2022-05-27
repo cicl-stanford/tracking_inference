@@ -8,7 +8,7 @@ import time
 
 model_type = argv[1]
 
-path = "model_performance/grid_collisions/"
+path = "model_performance/collisions/"
 
 print("Computing Regression...")
 reg_start = time.time()
