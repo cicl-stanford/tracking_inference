@@ -1,4 +1,4 @@
-# plinko_tracking_public
+# Tracking Inference
 This repo contains experiment, modeling, and analysis code for the Plinko eye-tracking project.
 
 ## code
@@ -94,13 +94,51 @@ Still images of the trial stimuli.
 
 ## Using pre-computed model-performance
 
+Model results and figures can be reproduced from pre-computed model performance using the analysis.Rmd file in `code/R/`. Navigate to the folder, open up the Rmd file in RStudio and knit the document to run all code chunks. The pre-knitted html file is included as well for those who don't have RStudio.
+
+The analysis script includes code for our grid search, which loads data from half our participant set (n=15), loads model behavior for a large set of models, and evaluates the behavior of those models against our training data. Pre-computed model behavior is saved for use in the grid search in `code/R/python/model/model_performance/grid_judgment_rt` and `code/R/python/model/model_performance/grid_regression_error`.
+
+The sequential sampler has four parameters: a decision threshold, reward-uncertainty tradeoff, kernel density bandwidth, and sample weight. We considered the following ranges for those parameters:
+
+- decision threshold -- [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1]
+- reward-uncertainty tradeoff -- [0.001, 0.003, 0.01, 0.03, 0.1]
+- kernel-density bandwidth -- [10, 20, 30, 40]
+- sample weight -- [450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100]
+
+The parameter setting that minimized the error in our grid search was:
+
+- decision threshold -- 0.95
+- reward-uncertainty tradeoff -- 0.003
+- kernel-density bandwidth -- 30
+- sample weight -- 950
+
+The uniform sampler has two parameters: the number of samples and the kernel-density bandwidth. We considered the following ranges for these parameter values:
+
+- number of samples -- [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+- kernel-density bandwidth -- [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+
+The parameter setting that minimized the error in our grid search was:
+
+- number of samples -- 40
+- kernel-density bandwidth -- 50
+
+After running the grid search the script loads performance from the top performing models and produces the visualizations and model results reported in the paper.
+
+Libraries required to run the analysis script are the following:
+
+- reticulate
+- knitr
+- Hmisc
+- DescTools
+- stringr
+- egg
+- tidyverse
+
 ## From scratch
 
 ### Generate model behavior
 
 Model behavior for either the sequential sampler or the uniform sampler can be generated using the `run_model.py` script in `code/python/model/`.
-
-The sequential sampler has four parameters: a decision threshold, reward-uncertainty tradeoff, kernel density bandwidth, and sample weight.
 
 To generate model behavior for the sequential sampler at a given parameter setting navigate to the folder `code/python/model` and run the following:
 
@@ -109,8 +147,6 @@ python run_model.py bandit <seed> <decision_threshold> <tradeoff> <bandwidth> <s
 ```
 
 The script will generate a csv recording judgments and number of collisions for 30 runs on each trial in the folder `model_performance/judgment_rt`. The model will also generate a pickle file recording all the physical events from all the simulations in the folder `model_performance/collisions`.
-
-The uniform sampler has two parameters: the number of samples and the bandwidth of the kernel density.
 
 You can generate model behavior for the uniform sampler in an analogous way:
 

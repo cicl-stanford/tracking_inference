@@ -966,16 +966,16 @@ cor(df_bandit_judge$prediction, df_fixed_judge$prediction)
 
 ## EMD
 ```{r}
-df_emd_bandit = read.csv("../python/model/model_performance/emd/bandit.csv") %>% 
+df_emd_bandit = read.csv("../python/model/model_performance/grid_emd/bandit.csv") %>% 
   select(trial, distance) %>% 
   mutate(model = "Sequential Sampler")
 
-df_emd_fixed_sample = read.csv("../python/model/model_performance/emd/fixed_sample.csv") %>%
+df_emd_fixed_sample = read.csv("../python/model/model_performance/grid_emd/fixed_sample.csv") %>%
   select(trial, distance) %>%
   mutate(trial = factor(trial),
          model = "Uniform Sampler")
 
-df_emd_baseline = read.csv("../python/model/model_performance/emd/visual_features.csv") %>% 
+df_emd_baseline = read.csv("../python/model/model_performance/grid_emd/visual_features.csv") %>% 
   select(-X) %>% 
   mutate(trial = factor(trial),
          model = "Visual Features")

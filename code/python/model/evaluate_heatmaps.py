@@ -76,6 +76,8 @@ def make_kde(trial_looks, grid_step, bw=50, method="FFT"):
 
 	histogram = np.flip(histogram.reshape(col_num,row_num).T, axis=0)
 
+	histogram /= np.sum(histogram)
+
 	return histogram
 
 
