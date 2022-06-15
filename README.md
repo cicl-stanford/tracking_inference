@@ -1,6 +1,31 @@
 # Tracking Inference
 This repo contains experiment, modeling, and analysis code for the Plinko eye-tracking project.
 
+## Project Structure
+
+```
+.
+├── code
+│   ├── R
+│   │   └── figures
+│   ├── experiment
+│   │   ├── exp_code
+│   │   ├── images
+│   │   └── videos
+│   └── python
+│       └── model
+├── data
+│   ├── human_data
+│   └── stimuli
+│       ├── ground_truth
+│       └── practice
+└── figures
+    ├── cogsci_2022
+    └── images
+        ├── jpg
+        └── png
+```
+
 ## code
 
 ### python
