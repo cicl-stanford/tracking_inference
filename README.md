@@ -1,5 +1,5 @@
 # Tracking Inference
-This repo contains experiment, modeling, and analysis code for the Plinko eye-tracking project.
+This repo contains experiment, modeling, and analysis code for the paper "Looking into the past: Eye-tracking mental simulation in physical inference." by Aaron Beller, Yingchen Xu, Scott Lindermann and Tobias Gerstenberg.
 
 ## Project Structure
 
