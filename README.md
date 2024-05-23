@@ -1,6 +1,40 @@
 # Tracking Inference
 This repo contains experiment, modeling, and analysis code for the paper "Looking into the past: Eye-tracking mental simulation in physical inference" by Aaron Beller, Yingchen Xu, Scott Lindermann and Tobias Gerstenberg.
 
+## Paper Summary
+
+The ability to infer latent causes from observed effects is a hallmark of human intelligence. If you find a vase broken on the ground and see your cat, Whiskers, resting in its place, you can infer without having to see the event that Whiskers likely knocked it over. These powerful inferences are made possible by rich intuitive theories encoding knowledge about how the world works (Gerstenberg & Tenenbaum 2017). These intuitive theories support mental simulations that allow us to predict how the world would evolve in imagined situation. In the domain of physical reasoning, prior research highlights the role of mental simulation as a powerful cognitive mechanism underlying human predictions in various tasks (e.g. Hegarty 2004; Battaglia, Hamrick, & Tenenbaum 2013; Dasgupta et al. 2018). In this space, eye-tracking has emerged as a promising form of behavioral data that provides unique insight into the mental simulations that people employ in physical reasoning tasks (Gerstenberg et al. 2017, Ahuja & Sheinberg 2019). In this work we bring together modeling tools for physical mental simulation with eye-tracking to study how people use mental simulation in a physical inference task, Plinko.
+
+<div align="center"><img src="figures/cogsci_2022/stim_examples.jpg"/></div>
+
+This figure illustrates the Plinko domain. After a brief training, participants are presented with inference trials like those shown in A-C. Participants see the final location of the ball and must infer which hole the ball fell from. On each trial, participants provide a categorical judgment indicating their best guess of the hole. In addition to this behavioral data, we also collect participant response times and eye-movement data. Panels D-F illustrate sample eye-movement traces from an individual participant. Yellow dots indicate the start of the trace, while orange dots indicate the end. The green glow reflects the overall density of eye-movement samples in a particular location.
+
+<div align="center"><img src="figures/cogsci_2022/bandit.jpg"/></div>
+
+We model participants mental simulations using a noisy physics engine (Battaglia, Hamrick, & Tenenbaum 2013). A noisy physics engine takes a standard physics engine and injects noise into the physical dynamics. The actual physical dynamics align reasonably well with human predictions, but the addition of noise allows the model to capture uncertainty that people show in their physical judgments. In our task we use the noisy physics engine to construct a conditional distribution on where the ball would land if it was dropped from a particular hole. Repeated simulation from a hole produces a set of samples that can be used to compute a kernel density estimate for the given hole. Treating these conditional probabilities as a likelihood, we can then compute the posterior probability assigned to each hole using Bayes' Rule (assuming a uniform prior on holes). With this posterior, our model can make a judgment.
+
+But how does the model determine which holes to simulate from? Participant eye-movement data suggest that people favor certain hypotheses over others. To capture this pattern, we develop a sequential sampling model that balances simulations from holes that it thinks are correct with holes that is uncertain about. The figure above illustrates a sequence of model behavior. We initialize the kernel density for each hole with an initial bump under the hole location, reflecting a naive assumption that the ball will generally fall straight down. The model starts by simulating from the most probable hypothesis, the green hole. In so doing, the model discovers that if the ball had fallen from that hole it would have landed a little to the left of its actual location. The model now considers the green hole less probable than before, and it is more confident in the outcome, so it considers a new hypothesis, the blue hole. Simulating from this hole shows that this hypothesis is more likely correct. The model continues simulating until it is sufficiently confident in a single hole.
+
+<div align="center"><img src="figures/cogsci_2022/model_comparison.jpg"/></div>
+
+We evaluate our model's behavior against each of our three data signals. We compare our sequential sampler against a simpler uniform sampler that simulates equally from each of the three different holes. On the judgment data the models are similar in their performance. However in the response times the sequential sampler is able to capture a qualitative distinction between fast and slow trials that the uniform sampler cannot capture. The difference between the models is most striking in the eye-movment data. We predict the aggregated distribution of participant movement from two-dimensional kernel density estimates computed using a set of visual features as well as the locations of salient physical events in the model simulations like collisions and drops. Panel D shows that on average the Earth movers' distance between the participant distribution and the model distribution is lower for the sequential sampler then the uniform sampler. The uniform sampler is closer to a visual features baseline, that only uses visual features to predict the participant distribution. Panel C provides some indication of how the sequential sampler is improving above the uniform sampler and visual features model. On trials where the ball lands clearly on one side of the Plinko box, participants focus most of their visual attention to that area. The sequential sampler is able to capture this asymmetric allocation of attention, while the uniform sampler and visual features model struggle.
+
+Overall, this project represents a first step toward understanding how people utilize mental simulation to perform physical inferences. Going forward we hope to investigate how people integrate sensory evidence from multiple modalities and how exactly eye-movement reflects underlying mental simulation.
+
+### References
+
+T. Gerstenberg, J. B. Tenenbaum (2017). Intuitive Theories. Oxford Handbook of Causal Reasoning.
+
+Hegarty, M. (2004). Mechanical reasoning by mental simulation. Trends in cognitive sciences, 8(6), 280-285.
+
+Battaglia, P. W., Hamrick, J. B., & Tenenbaum, J. B. (2013). Simulation as an engine of physical scene understanding. Proceedings of the National Academy of Sciences, 110(45), 18327-18332.
+
+Dasgupta, I., Smith, K. A., Schulz, E., Tenenbaum, J. B., & Gershman, S. J. (2018). Learning to act by integrating mental simulations and physical experiments. BioRxiv, 321497.
+
+Gerstenberg, T., Peterson, M. F., Goodman, N. D., Lagnado, D. A., & Tenenbaum, J. B. (2017). Eye-tracking causality. Psychological science, 28(12), 1731-1744.
+
+Ahuja, A., & Sheinberg, D. L. (2019). Behavioral and oculomotor evidence for visual simulation of object movement. Journal of vision, 19(6), 13-13.
+
 ## Project Structure
 
 ```
